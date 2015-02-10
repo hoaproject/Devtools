@@ -57,6 +57,7 @@ class Stub extends \Hoa\Console\Dispatcher\Kit {
      */
     protected $options = [
         ['dry-run',      Console\GetOption::NO_ARGUMENT      , 'd'],
+        ['verbose',      Console\GetOption::NO_ARGUMENT      , 'V'],
         ['stub',         Console\GetOption::REQUIRED_ARGUMENT, 's'],
         ['help',         Console\GetOption::NO_ARGUMENT      , 'h'],
         ['help',         Console\GetOption::NO_ARGUMENT      , '?']
@@ -74,8 +75,13 @@ class Stub extends \Hoa\Console\Dispatcher\Kit {
 
         $porcelaine = false;
         $stub       = null;
+        $verbose    = false;
 
         while(false !== $c = $this->getOption($v)) switch($c) {
+
+            case 'V':
+                $verbose = true;
+                break;
 
             case 'd':
                 $porcelaine = true;
@@ -163,7 +169,9 @@ class Stub extends \Hoa\Console\Dispatcher\Kit {
             $out .= 'class '.$c.' extends \\'.$class['class'].' {}'."\n";
             $out .= '}'."\n";
 
-            echo $class['class'].' > '.$class['alias']."\n";
+            if($verbose === true) {
+                echo $class['class'].' > '.$class['alias']."\n";
+            }
 
         }
 
@@ -187,6 +195,7 @@ class Stub extends \Hoa\Console\Dispatcher\Kit {
              'Options :', "\n",
              $this->makeUsageOptionsList([
                  'dry-run' => 'No written operation',
+                 'verbose' => 'Echo all information',
                  'stub' => 'Path to stub file',
                  'help' => 'This help.'
              ]), "\n";
