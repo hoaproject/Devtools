@@ -152,7 +152,14 @@ class Stub extends \Hoa\Console\Dispatcher\Kit {
                 }
 
                 if ($end !== '') {
-                    $f[] = array('class' => str_replace('/', '\\', $name), 'alias' => $end);
+                    $c = substr($end, strrpos($end, '\\') + 1);
+                    preg_match('#((?:abstract\s)?class|interface|trait)\s+'.$c.'\s#', $raw, $keyword);
+                    $f[] = [
+                        'class'     => str_replace('/', '\\', $name),
+                        'alias'     => $end,
+                        'keyword'   => $keyword[1],
+                        'classname' => $c
+                    ];
                 }
             }
         }
@@ -163,10 +170,9 @@ class Stub extends \Hoa\Console\Dispatcher\Kit {
         $out = '<?php '."\n";
         foreach ($f as $class) {
             $ns = substr($class['alias'], 0, strrpos($class['alias'], '\\'));
-            $c  = substr($class['alias'], strrpos($class['alias'], '\\')+1);
 
             $out .= 'namespace '.$ns.' {'."\n";
-            $out .= 'class '.$c.' extends \\'.$class['class'].' {}'."\n";
+            $out .= $class['keyword'].' '.$class['classname'].' extends \\'.$class['class'].' {}'."\n";
             $out .= '}'."\n";
 
             if($verbose === true) {
