@@ -57,8 +57,8 @@ class Stub extends Console\Dispatcher\Kit
      */
     protected $options = [
         ['dry-run', Console\GetOption::NO_ARGUMENT      , 'd'],
-        ['verbose', Console\GetOption::NO_ARGUMENT      , 'V'],
         ['stub',    Console\GetOption::REQUIRED_ARGUMENT, 's'],
+        ['verbose', Console\GetOption::NO_ARGUMENT      , 'V'],
         ['help',    Console\GetOption::NO_ARGUMENT      , 'h'],
         ['help',    Console\GetOption::NO_ARGUMENT      , '?']
     ];
@@ -68,7 +68,7 @@ class Stub extends Console\Dispatcher\Kit
     /**
      * The entry method.
      *
-     * @return  int
+     * @return  void
      */
     public function main()
     {
@@ -78,11 +78,6 @@ class Stub extends Console\Dispatcher\Kit
 
         while (false !== $c = $this->getOption($v)) {
             switch ($c) {
-                case 'V':
-                    $verbose = true;
-
-                    break;
-
                 case 'd':
                     $dryRun = true;
 
@@ -90,6 +85,11 @@ class Stub extends Console\Dispatcher\Kit
 
                 case 's':
                     $stub = $v;
+
+                    break;
+
+                case 'V':
+                    $verbose = true;
 
                     break;
 
@@ -106,89 +106,74 @@ class Stub extends Console\Dispatcher\Kit
             }
         }
 
-        $hoaPath = 'hoa://Library/';
-
         if (null === $stub) {
             return $this->usage();
         }
 
-        $finder = new File\Finder();
+        $hoaPath = 'hoa://Library/';
+        $aliases = [];
+        $finder  = new File\Finder();
         $finder
-            ->in($hoaPath)
+            ->in(resolve($hoaPath, true, true))
             ->name('#\.php$#')
             ->maxDepth(100)
             ->files();
 
-        $f = [];
-
         // READ
-        foreach ($finder as $value) {
-            $pathname = $value->getPathName();
-            $name     = $value->getBasename();
+        foreach ($finder as $file) {
+            $pathName  = $file->getPathName();
+            $raw       = file_get_contents($pathName);
 
-            preg_match('#Library([^\.]*)\.php$#', $pathname, $m);
+            if (!preg_match('#flexEntity\(\'([^\']+)#', $raw, $class)) {
+                preg_match('#\nclass_alias\(\'([^\']+)#', $raw, $class);
+            }
 
-            if(isset($m[1]) === true)
-            {
-                $name = 'Hoa'.$m[1];
+            if (empty($class)) {
+                continue;
+            }
 
-                $e = [];
-                foreach (explode(DS, $name) as $value) {
-                    $e[] = ucfirst($value);
-                }
+            $FQCN      = $class[1]; // Fully-Qualified Class Name
+            $alias     = Core\Consistency::getEntityShortestName($FQCN);
+            $className = substr($alias, strrpos($alias, '\\') + 1);
 
+            preg_match(
+                '#((?:(?:abstract|final)\s)?' .
+                'class|interface|trait)\s+' . $className . '\s#',
+                $raw,
+                $keyword
+            );
 
-                $name = implode(DS, $e);
-                $end  = '';
+            $aliases[] = [
+                'FQCN'      => $FQCN,
+                'alias'     => $alias,
+                'keyword'   => $keyword[1],
+                'className' => $className
+            ];
 
-                $raw = file_get_contents($pathname);
-
-                preg_match('#\nclass_alias\(([^,]*),(.*)\)#', $raw, $classAlias);
-
-                if (isset($classAlias[1]) and $classAlias[1] !== '') {
-                    $name = substr(trim($classAlias[1]), 1, -1);
-                    $end  = substr(trim($classAlias[2]), 1, -1);
-                }
-
-                preg_match('#flexEntity\(\'(.*)\'#', $raw, $flexEntity);
-
-                if (count($flexEntity) > 0) {
-                    $c   = $flexEntity[1];
-                    $end = Core\Consistency\Consistency::getEntityShortestName($c);
-                }
-
-                if ($end !== '') {
-                    $c = substr($end, strrpos($end, '\\') + 1);
-                    preg_match('#((?:abstract|final\s)?class|interface|trait)\s+' . $c . '\s#', $raw, $keyword);
-                    $f[] = [
-                        'class'     => str_replace('/', '\\', $name),
-                        'alias'     => $end,
-                        'keyword'   => $keyword[1],
-                        'classname' => $c
-                    ];
-                }
+            if (true === $verbose) {
+                echo
+                    $keyword[1] . ': ' .
+                    $FQCN . ' > ' .
+                    $alias . "\n";
             }
         }
 
-
-
         // WRITE
+        if (true === $dryRun) {
+            return;
+        }
+
         $out = '<?php ' . "\n";
-        foreach ($f as $class) {
+        foreach ($aliases as $class) {
             $ns = substr($class['alias'], 0, strrpos($class['alias'], '\\'));
 
             $out .= 'namespace ' . $ns . ' {' . "\n";
-            $out .= $class['keyword'] . ' ' . $class['classname'] . ' extends \\' . $class['class'] . ' {}' . "\n";
+            $out .= $class['keyword'] . ' ' . $class['className'];
+            $out .= ' extends \\' . $class['FQCN'] . ' {}' . "\n";
             $out .= '}' . "\n";
-
-            if (true === $verbose) {
-                echo $class['class'] . ' > ' . $class['alias'] . "\n";
-            }
         }
 
-        if (false === $dryRun) {
-            file_put_contents($stub, $out);
-        }
+        file_put_contents($stub, $out);
 
         return;
     }
@@ -196,7 +181,7 @@ class Stub extends Console\Dispatcher\Kit
     /**
      * The command usage.
      *
-     * @return  int
+     * @return  void
      */
     public function usage()
     {
