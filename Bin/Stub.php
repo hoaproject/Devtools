@@ -56,11 +56,11 @@ class Stub extends Console\Dispatcher\Kit
      * @var array
      */
     protected $options = [
-        ['dry-run', Console\GetOption::NO_ARGUMENT      , 'd'],
-        ['stub',    Console\GetOption::REQUIRED_ARGUMENT, 's'],
-        ['verbose', Console\GetOption::NO_ARGUMENT      , 'V'],
-        ['help',    Console\GetOption::NO_ARGUMENT      , 'h'],
-        ['help',    Console\GetOption::NO_ARGUMENT      , '?']
+        ['output', Console\GetOption::REQUIRED_ARGUMENT, 'o'],
+        ['dry-run', Console\GetOption::NO_ARGUMENT, 'd'],
+        ['verbose', Console\GetOption::NO_ARGUMENT, 'V'],
+        ['help', Console\GetOption::NO_ARGUMENT, 'h'],
+        ['help', Console\GetOption::NO_ARGUMENT, '?']
     ];
 
 
@@ -72,8 +72,8 @@ class Stub extends Console\Dispatcher\Kit
      */
     public function main()
     {
-        $dryRun  = false;
-        $stub    = null;
+        $dryRun = false;
+        $output = null;
         $verbose = false;
 
         while (false !== $c = $this->getOption($v)) {
@@ -81,48 +81,42 @@ class Stub extends Console\Dispatcher\Kit
                 case 'd':
                     $dryRun = true;
 
-                  break;
-
-                case 's':
-                    $stub = $v;
+                    break;
+                case 'o':
+                    $output = $v;
 
                     break;
-
                 case 'V':
                     $verbose = true;
 
                     break;
-
                 case 'h':
                 case '?':
+
                     return $this->usage();
-
-                  break;
-
                 case '__ambiguous':
                     $this->resolveOptionAmbiguity($v);
 
-                  break;
+                    break;
             }
         }
 
-        if (null === $stub) {
+        if (null === $output) {
             return $this->usage();
         }
 
         $hoaPath = 'hoa://Library/';
         $aliases = [];
-        $finder  = new File\Finder();
+        $finder = new File\Finder();
         $finder
             ->in(resolve($hoaPath, true, true))
             ->name('#\.php$#')
             ->maxDepth(100)
             ->files();
 
-        // READ
         foreach ($finder as $file) {
-            $pathName  = $file->getPathName();
-            $raw       = file_get_contents($pathName);
+            $pathName = $file->getPathName();
+            $raw = file_get_contents($pathName);
 
             if (!preg_match('#flexEntity\(\'([^\']+)#', $raw, $class)) {
                 preg_match('#\nclass_alias\(\'([^\']+)#', $raw, $class);
@@ -132,8 +126,8 @@ class Stub extends Console\Dispatcher\Kit
                 continue;
             }
 
-            $FQCN      = $class[1]; // Fully-Qualified Class Name
-            $alias     = Core\Consistency::getEntityShortestName($FQCN);
+            $FQCN = $class[1]; // Fully-Qualified Class Name
+            $alias = Core\Consistency::getEntityShortestName($FQCN);
             $className = substr($alias, strrpos($alias, '\\') + 1);
 
             preg_match(
@@ -144,9 +138,9 @@ class Stub extends Console\Dispatcher\Kit
             );
 
             $aliases[] = [
-                'FQCN'      => $FQCN,
-                'alias'     => $alias,
-                'keyword'   => $keyword[1],
+                'FQCN' => $FQCN,
+                'alias' => $alias,
+                'keyword' => $keyword[1],
                 'className' => $className
             ];
 
@@ -158,7 +152,6 @@ class Stub extends Console\Dispatcher\Kit
             }
         }
 
-        // WRITE
         if (true === $dryRun) {
             return;
         }
@@ -167,13 +160,14 @@ class Stub extends Console\Dispatcher\Kit
         foreach ($aliases as $class) {
             $ns = substr($class['alias'], 0, strrpos($class['alias'], '\\'));
 
-            $out .= 'namespace ' . $ns . ' {' . "\n";
-            $out .= $class['keyword'] . ' ' . $class['className'];
-            $out .= ' extends \\' . $class['FQCN'] . ' {}' . "\n";
-            $out .= '}' . "\n";
+            $out .= 
+                'namespace ' . $ns . ' {' . "\n".
+                $class['keyword'] . ' ' . $class['className'].
+                ' extends \\' . $class['FQCN'] . ' {}' . "\n".
+                '}' . "\n";
         }
 
-        file_put_contents($stub, $out);
+        file_put_contents($output, $out);
 
         return;
     }
@@ -185,13 +179,14 @@ class Stub extends Console\Dispatcher\Kit
      */
     public function usage()
     {
-        echo 'Usage   : devtools:stub <options>', "\n",
-             'Options :', "\n",
+        echo 
+            'Usage   : devtools:stub <options>', "\n",
+            'Options :', "\n",
              $this->makeUsageOptionsList([
+                 'stub' => 'Path to stub file',
                  'dry-run' => 'No written operation',
                  'verbose' => 'Echo all information',
-                 'stub'    => 'Path to stub file',
-                 'help'    => 'This help.'
+                 'help' => 'This help.'
              ]), "\n";
 
         return;
