@@ -8,7 +8,7 @@
  *
  * New BSD License
  *
- * Copyright © 2007-2015, Ivan Enderlin. All rights reserved.
+ * Copyright © 2007-2015, Hoa community. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -37,30 +37,30 @@
 namespace Hoa\Devtools\Bin;
 
 use Hoa\Console;
+use Hoa\Core;
+use Hoa\File;
 
 /**
  * Class \Hoa\Devtools\Bin\Stub
  *
  * This command resolve the class_alias function in destination to IDE.
  *
- * @author     Julien CLAUZEL <julien.clauzel@hoa-project.net>
- * @copyright  Copyright © 2007-2015 Ivan Enderlin.
+ * @copyright  Copyright © 2007-2015 Hoa community
  * @license    New BSD License
  */
-
-class Stub extends \Hoa\Console\Dispatcher\Kit {
-
+class Stub extends Console\Dispatcher\Kit
+{
     /**
      * Options description.
      *
-     * @var \Hoa\Devtools\Bin\Stub array
+     * @var array
      */
     protected $options = [
-        ['dry-run',      Console\GetOption::NO_ARGUMENT      , 'd'],
-        ['verbose',      Console\GetOption::NO_ARGUMENT      , 'V'],
-        ['stub',         Console\GetOption::REQUIRED_ARGUMENT, 's'],
-        ['help',         Console\GetOption::NO_ARGUMENT      , 'h'],
-        ['help',         Console\GetOption::NO_ARGUMENT      , '?']
+        ['dry-run', Console\GetOption::NO_ARGUMENT      , 'd'],
+        ['stub',    Console\GetOption::REQUIRED_ARGUMENT, 's'],
+        ['verbose', Console\GetOption::NO_ARGUMENT      , 'V'],
+        ['help',    Console\GetOption::NO_ARGUMENT      , 'h'],
+        ['help',    Console\GetOption::NO_ARGUMENT      , '?']
     ];
 
 
@@ -68,117 +68,112 @@ class Stub extends \Hoa\Console\Dispatcher\Kit {
     /**
      * The entry method.
      *
-     * @access  public
-     * @return  int
+     * @return  void
      */
-    public function main ( ) {
+    public function main()
+    {
+        $dryRun  = false;
+        $stub    = null;
+        $verbose = false;
 
-        $porcelaine = false;
-        $stub       = null;
-        $verbose    = false;
+        while (false !== $c = $this->getOption($v)) {
+            switch ($c) {
+                case 'd':
+                    $dryRun = true;
 
-        while(false !== $c = $this->getOption($v)) switch($c) {
+                  break;
 
-            case 'V':
-                $verbose = true;
-                break;
+                case 's':
+                    $stub = $v;
 
-            case 'd':
-                $porcelaine = true;
-              break;
-            
-            case 's':
-                $stub = $v;
-                break;
+                    break;
 
-            case 'h':
-            case '?':
-                return $this->usage();
-              break;
+                case 'V':
+                    $verbose = true;
 
-            case '__ambiguous':
-                $this->resolveOptionAmbiguity($v);
-              break;
+                    break;
+
+                case 'h':
+                case '?':
+                    return $this->usage();
+
+                  break;
+
+                case '__ambiguous':
+                    $this->resolveOptionAmbiguity($v);
+
+                  break;
+            }
+        }
+
+        if (null === $stub) {
+            return $this->usage();
         }
 
         $hoaPath = 'hoa://Library/';
-
-        if($stub === null)
-            return $this->usage();
-
-        $finder = new \Hoa\File\Finder();
+        $aliases = [];
+        $finder  = new File\Finder();
         $finder
-            ->in($hoaPath)
+            ->in(resolve($hoaPath, true, true))
             ->name('#\.php$#')
             ->maxDepth(100)
             ->files();
 
-        $f = array();
-
         // READ
-        foreach ($finder as $key => $value) {
-            $pathname = $value->getPathName();
-            $name     = $value->getBasename();
+        foreach ($finder as $file) {
+            $pathName  = $file->getPathName();
+            $raw       = file_get_contents($pathName);
 
-            preg_match('#Library([^\.]*)\.php$#', $pathname, $m);
+            if (!preg_match('#flexEntity\(\'([^\']+)#', $raw, $class)) {
+                preg_match('#\nclass_alias\(\'([^\']+)#', $raw, $class);
+            }
 
-            if(isset($m[1]) === true)
-            {
-                $name = 'Hoa'.$m[1];
+            if (empty($class)) {
+                continue;
+            }
 
-                $e = [];
-                foreach (explode('/', $name) as $value) {
-                    $e[] = ucfirst($value);
-                }
+            $FQCN      = $class[1]; // Fully-Qualified Class Name
+            $alias     = Core\Consistency::getEntityShortestName($FQCN);
+            $className = substr($alias, strrpos($alias, '\\') + 1);
 
+            preg_match(
+                '#((?:(?:abstract|final)\s)?' .
+                'class|interface|trait)\s+' . $className . '\s#',
+                $raw,
+                $keyword
+            );
 
-                $name = implode('/', $e);
-                $end  = '';
+            $aliases[] = [
+                'FQCN'      => $FQCN,
+                'alias'     => $alias,
+                'keyword'   => $keyword[1],
+                'className' => $className
+            ];
 
-                $raw = file_get_contents($pathname);
-
-                 preg_match('#\nclass_alias\(([^,]*),(.*)\)#', $raw, $classAlias);
-
-                if (isset($classAlias[1]) and $classAlias[1] !== '') {
-                    $name  = substr(trim($classAlias[1]), 1, -1);
-                    $end   = substr(trim($classAlias[2]), 1, -1);
-                }
-                 
-                preg_match('#flexEntity\(\'(.*)\'#', $raw, $flexEntity);
-
-                if (count($flexEntity) > 0) {
-                    $c   = $flexEntity[1];
-                    $end = \Hoa\Core\Consistency\Consistency::getEntityShortestName($c);
-                }
-
-                if ($end !== '') {
-                    $f[] = array('class' => str_replace('/', '\\', $name), 'alias' => $end);
-                }
+            if (true === $verbose) {
+                echo
+                    $keyword[1] . ': ' .
+                    $FQCN . ' > ' .
+                    $alias . "\n";
             }
         }
-
-
 
         // WRITE
-        $out = '<?php '."\n";
-        foreach ($f as $class) {
+        if (true === $dryRun) {
+            return;
+        }
+
+        $out = '<?php ' . "\n";
+        foreach ($aliases as $class) {
             $ns = substr($class['alias'], 0, strrpos($class['alias'], '\\'));
-            $c  = substr($class['alias'], strrpos($class['alias'], '\\')+1);
 
-            $out .= 'namespace '.$ns.' {'."\n";
-            $out .= 'class '.$c.' extends \\'.$class['class'].' {}'."\n";
-            $out .= '}'."\n";
-
-            if($verbose === true) {
-                echo $class['class'].' > '.$class['alias']."\n";
-            }
-
+            $out .= 'namespace ' . $ns . ' {' . "\n";
+            $out .= $class['keyword'] . ' ' . $class['className'];
+            $out .= ' extends \\' . $class['FQCN'] . ' {}' . "\n";
+            $out .= '}' . "\n";
         }
 
-        if($porcelaine === false) {
-
-            file_put_contents($stub, $out);
-        }
+        file_put_contents($stub, $out);
 
         return;
     }
@@ -186,18 +181,17 @@ class Stub extends \Hoa\Console\Dispatcher\Kit {
     /**
      * The command usage.
      *
-     * @access  public
-     * @return  int
+     * @return  void
      */
-    public function usage ( ) {
-
+    public function usage()
+    {
         echo 'Usage   : devtools:stub <options>', "\n",
              'Options :', "\n",
              $this->makeUsageOptionsList([
                  'dry-run' => 'No written operation',
                  'verbose' => 'Echo all information',
-                 'stub' => 'Path to stub file',
-                 'help' => 'This help.'
+                 'stub'    => 'Path to stub file',
+                 'help'    => 'This help.'
              ]), "\n";
 
         return;
