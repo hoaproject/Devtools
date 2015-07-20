@@ -72,8 +72,8 @@ class Stub extends Console\Dispatcher\Kit
      */
     public function main()
     {
-        $dryRun = false;
-        $output = null;
+        $dryRun  = false;
+        $output  = null;
         $verbose = false;
 
         while (false !== $c = $this->getOption($v)) {
@@ -107,7 +107,7 @@ class Stub extends Console\Dispatcher\Kit
 
         $hoaPath = 'hoa://Library/';
         $aliases = [];
-        $finder = new File\Finder();
+        $finder  = new File\Finder();
         $finder
             ->in(resolve($hoaPath, true, true))
             ->name('#\.php$#')
@@ -116,7 +116,7 @@ class Stub extends Console\Dispatcher\Kit
 
         foreach ($finder as $file) {
             $pathName = $file->getPathName();
-            $raw = file_get_contents($pathName);
+            $raw      = file_get_contents($pathName);
 
             if (!preg_match('#flexEntity\(\'([^\']+)#', $raw, $class)) {
                 preg_match('#\nclass_alias\(\'([^\']+)#', $raw, $class);
@@ -126,8 +126,8 @@ class Stub extends Console\Dispatcher\Kit
                 continue;
             }
 
-            $FQCN = $class[1]; // Fully-Qualified Class Name
-            $alias = Core\Consistency::getEntityShortestName($FQCN);
+            $FQCN      = $class[1]; // Fully-Qualified Class Name
+            $alias     = Core\Consistency::getEntityShortestName($FQCN);
             $className = substr($alias, strrpos($alias, '\\') + 1);
 
             preg_match(
@@ -138,9 +138,9 @@ class Stub extends Console\Dispatcher\Kit
             );
 
             $aliases[] = [
-                'FQCN' => $FQCN,
-                'alias' => $alias,
-                'keyword' => $keyword[1],
+                'FQCN'      => $FQCN,
+                'alias'     => $alias,
+                'keyword'   => $keyword[1],
                 'className' => $className
             ];
 
@@ -160,10 +160,10 @@ class Stub extends Console\Dispatcher\Kit
         foreach ($aliases as $class) {
             $ns = substr($class['alias'], 0, strrpos($class['alias'], '\\'));
 
-            $out .= 
-                'namespace ' . $ns . ' {' . "\n".
-                $class['keyword'] . ' ' . $class['className'].
-                ' extends \\' . $class['FQCN'] . ' {}' . "\n".
+            $out .=
+                'namespace ' . $ns . ' {' . "\n" .
+                $class['keyword'] . ' ' . $class['className'] .
+                ' extends \\' . $class['FQCN'] . ' {}' . "\n" .
                 '}' . "\n";
         }
 
@@ -179,14 +179,14 @@ class Stub extends Console\Dispatcher\Kit
      */
     public function usage()
     {
-        echo 
+        echo
             'Usage   : devtools:stub <options>', "\n",
             'Options :', "\n",
              $this->makeUsageOptionsList([
-                 'stub' => 'Path to stub file',
+                 'stub'    => 'Path to stub file',
                  'dry-run' => 'No written operation',
                  'verbose' => 'Echo all information',
-                 'help' => 'This help.'
+                 'help'    => 'This help.'
              ]), "\n";
 
         return;
