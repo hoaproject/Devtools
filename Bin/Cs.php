@@ -124,7 +124,7 @@ class Cs extends Console\Dispatcher\Kit
 
         $arguments[] = $path;
 
-        $processus = new Console\Processus($phpCsFixer, $arguments);
+        $processus = new Console\Processus('php '.$phpCsFixer, $arguments);
         $processus->on('input', function () {
             return false;
         });
