@@ -49,19 +49,21 @@ use Hoa\File;
  */
 class Snapshot extends Console\Dispatcher\Kit
 {
-    /**
-     * User friendly labels for changelog themes.
-     *
-     * @const
-     */
-    public const CHANGELOG_THEMES = [];
+    public const CHANGELOG_THEMES = [
+        'chore' => 'Chore',
+        'fix'   => 'Bug fixes',
+        'feat'  => 'New features',
+        'depr'  => 'Deprecated features',
+        'sec'   => 'Security',
+        'doc'   => 'Documentation improvements',
+        'test'  => 'Test improvements',
+        'undef' => 'Miscellaneous'
+    ];
 
-    /**
-     * User friendly labels for changelog themes.
-     *
-     * @const
-     */
-    public const CHANGELOG_KEYWORDS = [];
+    public const CHANGELOG_KEYWORDS = [
+        'ci'  => 'Continuous Integration',
+        'php' => 'PHP'
+    ];
 
     /**
      * Options description.
