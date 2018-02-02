@@ -71,13 +71,14 @@ class Snapshot extends Console\Dispatcher\Kit
      * @var array
      */
     protected $options = [
-        ['only-changelog',      Console\GetOption::NO_ARGUMENT,       'c'],
-        ['only-tag',            Console\GetOption::NO_ARGUMENT,       't'],
-        ['only-github-release', Console\GetOption::NO_ARGUMENT,       'g'],
-        ['break-bc',            Console\GetOption::NO_ARGUMENT,       'b'],
-        ['minimum-tag',         Console\GetOption::REQUIRED_ARGUMENT, 'm'],
-        ['help',                Console\GetOption::NO_ARGUMENT,       'h'],
-        ['help',                Console\GetOption::NO_ARGUMENT,       '?']
+        ['only-changelog',          Console\GetOption::NO_ARGUMENT,       'c'],
+        ['without-typed-commits',   Console\GetOption::NO_ARGUMENT,       'w'],
+        ['only-tag',                Console\GetOption::NO_ARGUMENT,       't'],
+        ['only-github-release',     Console\GetOption::NO_ARGUMENT,       'g'],
+        ['break-bc',                Console\GetOption::NO_ARGUMENT,       'b'],
+        ['minimum-tag',             Console\GetOption::REQUIRED_ARGUMENT, 'm'],
+        ['help',                    Console\GetOption::NO_ARGUMENT,       'h'],
+        ['help',                    Console\GetOption::NO_ARGUMENT,       '?']
     ];
 
 
@@ -142,6 +143,11 @@ class Snapshot extends Console\Dispatcher\Kit
 
                 case 'm':
                     $minimumTag = $v;
+
+                    break;
+
+                case 'w':
+                    $withoutTypedCommits = true;
 
                     break;
 
@@ -643,6 +649,8 @@ class Snapshot extends Console\Dispatcher\Kit
                 'b'    => 'Whether we have break the backward compatibility ' .
                           'or not.',
                 'c'    => 'Only do steps related to the CHANGELOG.md file.',
+                'w'    => 'Only export typed commits to the CHANGELOG.md ' .
+                          'file and discard others.',
                 't'    => 'Only do steps related to the tag.',
                 'g'    => 'Only do steps related to Github release.',
                 'm'    => 'Set the minimum tag (default: the latest, often ' .
