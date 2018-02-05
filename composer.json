@@ -24,12 +24,12 @@
     },
     "require": {
         "php"            : ">=7.1",
-        "hoa/cli"        : "~2.0",
-        "hoa/consistency": "~1.0",
-        "hoa/file"       : "~1.0",
-        "hoa/protocol"   : "~1.0",
-        "hoa/router"     : "~3.0",
-        "hoa/xyl"        : "~1.0"
+        "hoa/cli"        : "dev-master",
+        "hoa/consistency": "dev-master",
+        "hoa/file"       : "dev-master",
+        "hoa/protocol"   : "dev-master",
+        "hoa/router"     : "dev-master",
+        "hoa/xyl"        : "dev-master"
     },
     "autoload": {
         "psr-4": {
@@ -40,5 +40,6 @@
         "branch-alias": {
             "dev-master": "1.x-dev"
         }
-    }
+    },
+    "minimum-stability": "dev"
 }
