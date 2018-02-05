@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Hoa
  *
@@ -8,7 +10,7 @@
  *
  * New BSD License
  *
- * Copyright © 2007-2017, Hoa community. All rights reserved.
+ * Copyright © 2007-2018, Hoa community. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -37,18 +39,15 @@
 namespace Hoa\Devtools\Resource\PHPCSFixer\Fixer;
 
 use PhpCsFixer\AbstractLinesBeforeNamespaceFixer;
+use PhpCsFixer\Console\Application;
 use PhpCsFixer\FixerDefinition\FixerDefinition;
 use PhpCsFixer\Tokenizer\Tokens;
-use PhpCsFixer\Console\Application;
 use SplFileInfo;
 
 /**
  * Class \Hoa\Devtools\Resource\PHPCSFixer\Fixer\NoBlankLinesBeforeEntity.
  *
  * Remove blank lines before entity declarations (class, interface, trait etc.).
- *
- * @copyright  Copyright © 2007-2017 Hoa community
- * @license    New BSD License
  */
 class NoBlankLinesBeforeEntity extends AbstractLinesBeforeNamespaceFixer
 {

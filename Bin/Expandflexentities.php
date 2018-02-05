@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Hoa
  *
@@ -8,7 +10,7 @@
  *
  * New BSD License
  *
- * Copyright © 2007-2017, Hoa community. All rights reserved.
+ * Copyright © 2007-2018, Hoa community. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -44,16 +46,11 @@ use Hoa\File;
  * Class \Hoa\Devtools\Bin\ExpandFlexEntities
  *
  * This command resolves the `class_alias` function for IDE.
- *
- * @copyright  Copyright © 2007-2017 Hoa community
- * @license    New BSD License
  */
 class Expandflexentities extends Console\Dispatcher\Kit
 {
     /**
      * Options description.
-     *
-     * @var array
      */
     protected $options = [
         ['output',  Console\GetOption::REQUIRED_ARGUMENT, 'o'],
@@ -65,10 +62,8 @@ class Expandflexentities extends Console\Dispatcher\Kit
 
     /**
      * The entry method.
-     *
-     * @return  void
      */
-    public function main()
+    public function main(): int
     {
         $dryRun  = false;
         $output  = 'php://output';
@@ -93,7 +88,9 @@ class Expandflexentities extends Console\Dispatcher\Kit
 
                 case 'h':
                 case '?':
-                    return $this->usage();
+                    $this->usage();
+
+                    return 0;
 
                 case '__ambiguous':
                     $this->resolveOptionAmbiguity($v);
@@ -163,20 +160,18 @@ class Expandflexentities extends Console\Dispatcher\Kit
         if (true === $dryRun) {
             echo $out;
 
-            return;
+            return 0;
         }
 
         file_put_contents($output, $out);
 
-        return;
+        return 0;
     }
 
     /**
      * The command usage.
-     *
-     * @return  void
      */
-    public function usage()
+    public function usage(): void
     {
         echo
             'Usage   : devtools:expandflexentities <options>', "\n",
@@ -187,8 +182,6 @@ class Expandflexentities extends Console\Dispatcher\Kit
                  'verbose' => 'Echo all information.',
                  'help'    => 'This help.'
              ]), "\n";
-
-        return;
     }
 }
 

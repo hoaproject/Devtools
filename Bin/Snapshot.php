@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Hoa
  *
@@ -8,7 +10,7 @@
  *
  * New BSD License
  *
- * Copyright © 2007-2017, Hoa community. All rights reserved.
+ * Copyright © 2007-2018, Hoa community. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -43,16 +45,11 @@ use Hoa\File;
  * Class \Hoa\Devtools\Bin\Snapshot.
  *
  * Assistant to create a snapshot.
- *
- * @copyright  Copyright © 2007-2017 Hoa community
- * @license    New BSD License
  */
 class Snapshot extends Console\Dispatcher\Kit
 {
     /**
      * Options description.
-     *
-     * @var array
      */
     protected $options = [
         ['only-changelog',      Console\GetOption::NO_ARGUMENT,       'c'],
@@ -68,10 +65,8 @@ class Snapshot extends Console\Dispatcher\Kit
 
     /**
      * The entry method.
-     *
-     * @return  int
      */
-    public function main()
+    public function main(): int
     {
         $breakBC    = false;
         $minimumTag = null;
@@ -84,7 +79,7 @@ class Snapshot extends Console\Dispatcher\Kit
             'github'    => -1
         ];
 
-        $onlyStep = function ($step) use (&$doSteps) {
+        $onlyStep = function ($step) use (&$doSteps): void {
             $doSteps[$step] = 1;
 
             foreach ($doSteps as &$doStep) {
@@ -131,20 +126,26 @@ class Snapshot extends Console\Dispatcher\Kit
                 case 'h':
                 case '?':
                 default:
-                    return $this->usage();
+                    $this->usage();
+
+                    return 0;
             }
         }
 
         $this->parser->listInputs($repositoryRoot);
 
         if (empty($repositoryRoot)) {
-            return $this->usage();
+            $this->usage();
+
+            return 0;
         }
 
         if (false === file_exists($repositoryRoot . DS . '.git')) {
             throw new Console\Exception(
                 '%s is not a valid Git repository.',
-                0, $repositoryRoot);
+                0,
+                $repositoryRoot
+            );
         }
 
         date_default_timezone_set('UTC');
@@ -165,7 +166,7 @@ class Snapshot extends Console\Dispatcher\Kit
         $currentMCN = 0;
 
         if (!empty($tags)) {
-            list($currentMCN) = explode('.', $tags[0], 2);
+            [$currentMCN] = explode('.', $tags[0], 2);
         }
 
         if (true === $breakBC) {
@@ -180,7 +181,7 @@ class Snapshot extends Console\Dispatcher\Kit
             }
         } else {
             $toInt = function ($tag) {
-                list($x, $y, $m, $d) = explode('.', $tag);
+                [$x, $y, $m, $d] = explode('.', $tag);
 
                 return $x * 1000000 + $y * 10000 + $m * 100 + $d * 1;
             };
@@ -208,7 +209,7 @@ class Snapshot extends Console\Dispatcher\Kit
              '  5. pushing the tag,', "\n",
              '  6. creating a release on Github.', "\n";
 
-        $step = function ($stepGroup, $message, $task) use ($doSteps) {
+        $step = function ($stepGroup, $message, $task) use ($doSteps): void {
             echo "\n\n";
             Console\Cursor::colorize('foreground(black) background(yellow)');
             echo 'Step “', $message, '”.';
@@ -234,7 +235,7 @@ class Snapshot extends Console\Dispatcher\Kit
         $step(
             'test',
             'tests must pass',
-            function () {
+            function (): void {
                 echo
                     'Tests must be green. Execute:', "\n",
                     '    $ hoa test:run -d Test', "\n",
@@ -247,7 +248,7 @@ class Snapshot extends Console\Dispatcher\Kit
         $step(
             'changelog',
             'updating the CHANGELOG.md file',
-            function () use ($tags, $newTag, $repositoryRoot, &$changelog) {
+            function () use ($tags, $newTag, $repositoryRoot, &$changelog): void {
                 $changelog = null;
 
                 if (empty($tags)) {
@@ -324,7 +325,7 @@ class Snapshot extends Console\Dispatcher\Kit
         $step(
             'changelog',
             'commit the CHANGELOG.md file',
-            function () use ($newTag, $repositoryRoot) {
+            function () use ($newTag, $repositoryRoot): void {
                 echo Console\Processus::execute(
                     'git --git-dir=' . $repositoryRoot . '/.git ' .
                         'add ' .
@@ -354,7 +355,7 @@ class Snapshot extends Console\Dispatcher\Kit
                 $tags,
                 $newTag,
                 $allTags
-            ) {
+            ): void {
                 if (true === $breakBC) {
                     echo 'A BC break has been introduced, ',
                          'few more steps are required:', "\n";
@@ -362,7 +363,7 @@ class Snapshot extends Console\Dispatcher\Kit
                     $step(
                         'tag',
                         'update the composer.json file',
-                        function () use ($currentMCN, $repositoryRoot) {
+                        function () use ($currentMCN, $repositoryRoot): void {
                             echo 'The `extra.branch-alias.dev-master` value ',
                                  'must be set to `',
                                  $currentMCN, '.x-dev`', "\n";
@@ -378,7 +379,7 @@ class Snapshot extends Console\Dispatcher\Kit
                     $step(
                         'tag',
                         'open issues to update parent dependencies',
-                        function () {
+                        function (): void {
                             echo 'Some libraries may depend on this one. ',
                                  'Issues must be opened to update this ',
                                  'dependency.', "\n";
@@ -390,7 +391,7 @@ class Snapshot extends Console\Dispatcher\Kit
                     $step(
                         'tag',
                         'update the README.md file',
-                        function () use ($currentMCN, $repositoryRoot) {
+                        function () use ($currentMCN, $repositoryRoot): void {
                             echo 'The installation Section must invite the ',
                                  'user to install the version ',
                                  '`~', $currentMCN, '.0`.', "\n";
@@ -406,7 +407,7 @@ class Snapshot extends Console\Dispatcher\Kit
                     $step(
                         'tag',
                         'commit the composer.json and README.md files',
-                        function () use ($currentMCN, $repositoryRoot) {
+                        function () use ($currentMCN, $repositoryRoot): void {
                             echo Console\Processus::execute(
                                 'git --git-dir=' . $repositoryRoot . '/.git ' .
                                     'add ' .
@@ -463,7 +464,7 @@ class Snapshot extends Console\Dispatcher\Kit
         $step(
             'tag',
             'push the new snapshot',
-            function () use ($repositoryRoot) {
+            function () use ($repositoryRoot): void {
                 Console\Cursor::colorize('foreground(white) background(red)');
                 echo 'This step ',
                 Console\Cursor::colorize('underlined');
@@ -515,7 +516,7 @@ class Snapshot extends Console\Dispatcher\Kit
         $step(
             'github',
             'create a release on Github',
-            function () use ($newTag, $changelog, $repositoryRoot) {
+            function () use ($newTag, $changelog, $repositoryRoot): void {
                 $temporary = new File\ReadWrite($repositoryRoot . DS . '._hoa.GithubRelease.md');
                 $temporary->truncate(0);
 
@@ -533,7 +534,7 @@ class Snapshot extends Console\Dispatcher\Kit
                 $temporary->delete();
 
                 $composer = json_decode(file_get_contents('composer.json'));
-                list(, $libraryName) = explode('/', $composer->name);
+                [, $libraryName] = explode('/', $composer->name);
 
                 $output = json_encode([
                     'tag_name' => $newTag,
@@ -565,15 +566,13 @@ class Snapshot extends Console\Dispatcher\Kit
 
         echo "\n", '🍺 🍺 🍺', "\n";
 
-        return;
+        return 0;
     }
 
     /**
      * The command usage.
-     *
-     * @return  int
      */
-    public function usage()
+    public function usage(): int
     {
         echo
             'Usage   : devtools:snapshot <options> repository-root', "\n",
@@ -588,8 +587,6 @@ class Snapshot extends Console\Dispatcher\Kit
                           'useful with --only-changelog).',
                 'help' => 'This help.'
             ]), "\n";
-
-        return;
     }
 }
 

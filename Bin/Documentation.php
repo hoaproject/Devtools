@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Hoa
  *
@@ -8,7 +10,7 @@
  *
  * New BSD License
  *
- * Copyright © 2007-2017, Hoa community. All rights reserved.
+ * Copyright © 2007-2018, Hoa community. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -44,16 +46,11 @@ use Hoa\Xyl;
  * Class Hoa\Devtools\Bin\Documentation.
  *
  * Generate documentation.
- *
- * @copyright  Copyright © 2007-2017 Hoa community
- * @license    New BSD License
  */
 class Documentation extends Console\Dispatcher\Kit
 {
     /**
      * Options description.
-     *
-     * @var array
      */
     protected $options = [
         ['clean',       Console\GetOption::NO_ARGUMENT,       'c'],
@@ -68,10 +65,8 @@ class Documentation extends Console\Dispatcher\Kit
 
     /**
      * The entry method.
-     *
-     * @return  int
      */
-    public function main()
+    public function main(): int
     {
         $directories = [];
         $clean       = false;
@@ -120,7 +115,9 @@ class Documentation extends Console\Dispatcher\Kit
                 case 'h':
                 case '?':
                 default:
-                    return $this->usage();
+                    $this->usage();
+
+                    return 0;
             }
         }
 
@@ -135,7 +132,7 @@ class Documentation extends Console\Dispatcher\Kit
                 unset($directory);
             }
 
-            return;
+            return 0;
         }
 
         if (empty($directories)) {
@@ -331,7 +328,7 @@ class Documentation extends Console\Dispatcher\Kit
                     'Opening…', "\n",
                     Console\Processus::execute($_SERVER['BROWSER'] . ' ' . $pathname, false);
 
-                return;
+                return 0;
             }
 
             $utilities = [
@@ -347,7 +344,7 @@ class Documentation extends Console\Dispatcher\Kit
                         'Opening…', "\n",
                         Console\Processus::execute($utilityPath . ' ' . $pathname, false);
 
-                    return;
+                    return 0;
                 }
             }
 
@@ -356,15 +353,13 @@ class Documentation extends Console\Dispatcher\Kit
 
         echo "\n", 'Open ', $pathname, '.', "\n";
 
-        return;
+        return 0;
     }
 
     /**
      * The command usage.
-     *
-     * @return  int
      */
-    public function usage()
+    public function usage(): void
     {
         echo
             'Usage   : devtools:documentation <options>', "\n",
@@ -377,8 +372,6 @@ class Documentation extends Console\Dispatcher\Kit
                 'o'    => 'Open the documentation in a browser after its computation.',
                 'help' => 'This help.'
             ]), "\n";
-
-        return;
     }
 }
 

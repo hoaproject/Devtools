@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Hoa
  *
@@ -8,7 +10,7 @@
  *
  * New BSD License
  *
- * Copyright © 2007-2017, Hoa community. All rights reserved.
+ * Copyright © 2007-2018, Hoa community. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -42,16 +44,11 @@ use Hoa\Console;
  * Class \Hoa\Devtools\Bin\State.
  *
  * Get state of a library.
- *
- * @copyright  Copyright © 2007-2017 Hoa community
- * @license    New BSD License
  */
 class State extends Console\Dispatcher\Kit
 {
     /**
      * Options description.
-     *
-     * @var array
      */
     protected $options = [
         ['help', Console\GetOption::NO_ARGUMENT, 'h'],
@@ -62,10 +59,8 @@ class State extends Console\Dispatcher\Kit
 
     /**
      * The entry method.
-     *
-     * @return  int
      */
-    public function main()
+    public function main(): int
     {
         $library = null;
 
@@ -79,14 +74,18 @@ class State extends Console\Dispatcher\Kit
                 case 'h':
                 case '?':
                 default:
-                    return $this->usage();
-        }
+                    $this->usage();
+
+                    return 0;
+            }
         }
 
         $this->parser->listInputs($library);
 
         if (empty($library)) {
-            return $this->usage();
+            $this->usage();
+
+            return 0;
         }
 
         $library = ucfirst(strtolower($library));
@@ -109,15 +108,13 @@ class State extends Console\Dispatcher\Kit
 
         echo $status;
 
-        return;
+        return 0;
     }
 
     /**
      * The command usage.
-     *
-     * @return  int
      */
-    public function usage()
+    public function usage(): void
     {
         echo
             'Usage   : devtools:state <options> library', "\n",
@@ -125,8 +122,6 @@ class State extends Console\Dispatcher\Kit
             $this->makeUsageOptionsList([
                 'help' => 'This help.'
             ]), "\n";
-
-        return;
     }
 }
 

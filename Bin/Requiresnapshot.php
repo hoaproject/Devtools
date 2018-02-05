@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Hoa
  *
@@ -8,7 +10,7 @@
  *
  * New BSD License
  *
- * Copyright © 2007-2017, Hoa community. All rights reserved.
+ * Copyright © 2007-2018, Hoa community. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -42,16 +44,11 @@ use Hoa\Console;
  * Class \Hoa\Devtools\Bin\Requiresnapshot.
  *
  * Check if a library requires a new snapshot or not.
- *
- * @copyright  Copyright © 2007-2017 Hoa community
- * @license    New BSD License
  */
 class Requiresnapshot extends Console\Dispatcher\Kit
 {
     /**
      * Options description.
-     *
-     * @var array
      */
     protected $options = [
         ['no-verbose', Console\GetOption::NO_ARGUMENT, 'V'],
@@ -66,10 +63,8 @@ class Requiresnapshot extends Console\Dispatcher\Kit
 
     /**
      * The entry method.
-     *
-     * @return  int
      */
-    public function main()
+    public function main(): int
     {
         $verbose       = Console::isDirect(STDOUT);
         $printSnapshot = false;
@@ -106,14 +101,18 @@ class Requiresnapshot extends Console\Dispatcher\Kit
                 case 'h':
                 case '?':
                 default:
-                    return $this->usage();
+                    $this->usage();
+
+                    return 0;
             }
         }
 
         $this->parser->listInputs($repositoryRoot);
 
         if (empty($repositoryRoot)) {
-            return $this->usage();
+            $this->usage();
+
+            return 0;
         }
 
         if (false === file_exists($repositoryRoot . DS . '.git')) {
@@ -193,15 +192,13 @@ class Requiresnapshot extends Console\Dispatcher\Kit
             echo $output, "\n";
         }
 
-        return !$needNewSnapshot;
+        return (int) !$needNewSnapshot;
     }
 
     /**
      * The command usage.
-     *
-     * @return  int
      */
-    public function usage()
+    public function usage(): void
     {
         echo
             'Usage   : devtools:requiresnapshot <options> repository-root', "\n",
@@ -216,8 +213,6 @@ class Requiresnapshot extends Console\Dispatcher\Kit
                           'snapshot in a column.',
                 'help' => 'This help.'
             ]), "\n";
-
-        return;
     }
 }
 
