@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Hoa
  *
@@ -8,7 +10,7 @@
  *
  * New BSD License
  *
- * Copyright © 2007-2017, Hoa community. All rights reserved.
+ * Copyright © 2007-2018, Hoa community. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -42,16 +44,11 @@ use Hoa\Console;
  * Class \Hoa\Devtools\Bin\Diagnostic.
  *
  * This command generates a diagnostic.
- *
- * @copyright  Copyright © 2007-2017 Hoa community
- * @license    New BSD License
  */
 class Diagnostic extends Console\Dispatcher\Kit
 {
     /**
      * Options description.
-     *
-     * @var array
      */
     protected $options = [
         ['section', Console\GetOption::REQUIRED_ARGUMENT, 's'],
@@ -64,10 +61,8 @@ class Diagnostic extends Console\Dispatcher\Kit
 
     /**
      * The entry method.
-     *
-     * @return  int
      */
-    public function main()
+    public function main(): int
     {
         $sections   = [];
         $mail       = null;
@@ -87,7 +82,9 @@ class Diagnostic extends Console\Dispatcher\Kit
 
                 case 'h':
                 case '?':
-                    return $this->usage();
+                    $this->usage();
+
+                    return 0;
 
                 case '__ambiguous':
                     $this->resolveOptionAmbiguity($v);
@@ -96,7 +93,7 @@ class Diagnostic extends Console\Dispatcher\Kit
             }
         }
 
-        $store = function ($sections, $key, $value = null) use (&$diagnostic) {
+        $store = function ($sections, $key, $value = null) use (&$diagnostic): void {
             if (is_array($key) && null === $value) {
                 foreach ($key as $i => $name) {
                     $diagnostic[$sections][$i] = $name;
@@ -131,7 +128,7 @@ class Diagnostic extends Console\Dispatcher\Kit
         $store(
             'system',
             'lang',
-            isset($_SERVER['LANG']) ? $_SERVER['LANG'] : 'unknown'
+            $_SERVER['LANG'] ?? 'unknown'
         );
         $store(
             'bin',
@@ -159,7 +156,7 @@ class Diagnostic extends Console\Dispatcher\Kit
             $entry      = 'extension-' . strtolower($extension);
 
             if ('extension-standard' !== $entry &&
-                'extension-core'     !== $entry) {
+                'extension-core' !== $entry) {
                 $entries = [];
 
                 foreach ($reflection->getINIEntries() as $key => $value) {
@@ -204,15 +201,13 @@ class Diagnostic extends Console\Dispatcher\Kit
             return mail($mail, $subject, $ini) ? 0 : 1;
         }
 
-        return;
+        return 0;
     }
 
     /**
      * The command usage.
-     *
-     * @return  int
      */
-    public function usage()
+    public function usage(): void
     {
         echo
             'Usage   : devtools:diagnostic <options>', "\n",
@@ -227,17 +222,12 @@ class Diagnostic extends Console\Dispatcher\Kit
                 'm'    => 'Email address where to send the diagnostic.',
                 'help' => 'This help.'
             ]), "\n";
-
-        return;
     }
 
     /**
      * Transform an array into INI format.
-     *
-     * @param   array  $array    Array to transform.
-     * @return  string
      */
-    private function arrayToIni(array $array)
+    private function arrayToIni(array $array): ?string
     {
         $out = null;
 

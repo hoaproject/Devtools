@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Hoa
  *
@@ -8,7 +10,7 @@
  *
  * New BSD License
  *
- * Copyright © 2007-2017, Hoa community. All rights reserved.
+ * Copyright © 2007-2018, Hoa community. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -42,16 +44,11 @@ use Hoa\Console;
  * Class \Hoa\Devtools\Bin\Paste.
  *
  * Paste something somewhere.
- *
- * @copyright  Copyright © 2007-2017 Hoa community
- * @license    New BSD License
  */
 class Paste extends Console\Dispatcher\Kit
 {
     /**
      * Options description.
-     *
-     * @var array
      */
     protected $options = [
         ['address', Console\GetOption::REQUIRED_ARGUMENT, 'a'],
@@ -63,10 +60,8 @@ class Paste extends Console\Dispatcher\Kit
 
     /**
      * The entry method.
-     *
-     * @return  int
      */
-    public function main()
+    public function main(): int
     {
         $address = 'paste.hoa-project.net:80';
 
@@ -79,7 +74,9 @@ class Paste extends Console\Dispatcher\Kit
 
                 case 'h':
                 case '?':
-                    return $this->usage();
+                    $this->usage();
+
+                    return 0;
 
                 case '__ambiguous':
                     $this->resolveOptionAmbiguity($v);
@@ -103,15 +100,13 @@ class Paste extends Console\Dispatcher\Kit
 
         echo file_get_contents('http://' . $address, false, $context), "\n";
 
-        return;
+        return 0;
     }
 
     /**
      * The command usage.
-     *
-     * @return  int
      */
-    public function usage()
+    public function usage(): void
     {
         echo
             'Usage   : devtools:paste <options>', "\n",
@@ -120,8 +115,6 @@ class Paste extends Console\Dispatcher\Kit
                 'a'    => 'Address to the paste server.',
                 'help' => 'This help.'
             ]), "\n";
-
-        return;
     }
 }
 

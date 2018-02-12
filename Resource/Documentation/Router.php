@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 use Hoa\Router;
 
 $router = new Router\Http();
