@@ -119,15 +119,6 @@ Expand entity names to ease auto-completion in IDE.
 $ hoa devtools:expandflexentities
 ```
 
-### `paste`
-
-Paste something somewhere (by default, on `paste.hoa-project.net`).
-
-```sh
-$ echo 'foobar' | hoa devtools:paste
-http://paste.hoa-project.net:80/<id>
-```
-
 ### `requiresnapshot`
 
 Check if a library requires a new snapshot or not.
