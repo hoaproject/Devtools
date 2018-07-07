@@ -49,19 +49,36 @@ use Hoa\File;
  */
 class Snapshot extends Console\Dispatcher\Kit
 {
+    public const CHANGELOG_THEMES = [
+        'chore' => 'Chore',
+        'fix'   => 'Bug fixes',
+        'feat'  => 'New features',
+        'depr'  => 'Deprecated features',
+        'sec'   => 'Security',
+        'doc'   => 'Documentation improvements',
+        'test'  => 'Test improvements',
+        'undef' => 'Miscellaneous'
+    ];
+
+    public const CHANGELOG_KEYWORDS = [
+        'ci'  => 'Continuous Integration',
+        'php' => 'PHP'
+    ];
+
     /**
      * Options description.
      *
      * @var array
      */
     protected $options = [
-        ['only-changelog',      Console\GetOption::NO_ARGUMENT,       'c'],
-        ['only-tag',            Console\GetOption::NO_ARGUMENT,       't'],
-        ['only-github-release', Console\GetOption::NO_ARGUMENT,       'g'],
-        ['break-bc',            Console\GetOption::NO_ARGUMENT,       'b'],
-        ['minimum-tag',         Console\GetOption::REQUIRED_ARGUMENT, 'm'],
-        ['help',                Console\GetOption::NO_ARGUMENT,       'h'],
-        ['help',                Console\GetOption::NO_ARGUMENT,       '?']
+        ['only-changelog',          Console\GetOption::NO_ARGUMENT,       'c'],
+        ['without-typed-commits',   Console\GetOption::NO_ARGUMENT,       'w'],
+        ['only-tag',                Console\GetOption::NO_ARGUMENT,       't'],
+        ['only-github-release',     Console\GetOption::NO_ARGUMENT,       'g'],
+        ['break-bc',                Console\GetOption::NO_ARGUMENT,       'b'],
+        ['minimum-tag',             Console\GetOption::REQUIRED_ARGUMENT, 'm'],
+        ['help',                    Console\GetOption::NO_ARGUMENT,       'h'],
+        ['help',                    Console\GetOption::NO_ARGUMENT,       '?']
     ];
 
 
@@ -73,9 +90,10 @@ class Snapshot extends Console\Dispatcher\Kit
      */
     public function main()
     {
-        $breakBC    = false;
-        $minimumTag = null;
-        $doSteps    = [
+        $breakBC             = false;
+        $minimumTag          = null;
+        $withoutTypedCommits = false;
+        $doSteps             = [
             // -1 and 1 mean true,
             // 0 means false.
             'test'      => -1,
@@ -125,6 +143,11 @@ class Snapshot extends Console\Dispatcher\Kit
 
                 case 'm':
                     $minimumTag = $v;
+
+                    break;
+
+                case 'w':
+                    $withoutTypedCommits = true;
 
                     break;
 
@@ -247,7 +270,13 @@ class Snapshot extends Console\Dispatcher\Kit
         $step(
             'changelog',
             'updating the CHANGELOG.md file',
-            function () use ($tags, $newTag, $repositoryRoot, &$changelog) {
+            function () use (
+                $tags,
+                $newTag,
+                $repositoryRoot,
+                &$changelog,
+                $withoutTypedCommits
+            ) {
                 $changelog = null;
 
                 if (empty($tags)) {
@@ -264,6 +293,10 @@ class Snapshot extends Console\Dispatcher\Kit
                 } else {
                     array_unshift($tags, 'HEAD');
 
+                    $changelogThemesRegex = sprintf(
+                        '/^(?<type>%s)\((?<section>[^)]+)\)(?<message>.*)$/',
+                        implode('|', array_keys(self::CHANGELOG_THEMES))
+                    );
                     for ($i = 0, $max = count($tags) - 1; $i < $max; ++$i) {
                         $fromStep = $tags[$i];
                         $toStep   = $tags[$i + 1];
@@ -273,16 +306,50 @@ class Snapshot extends Console\Dispatcher\Kit
                             $title = $newTag;
                         }
 
-                        $changelog .=
-                            '# ' . $title . "\n\n" .
-                            Console\Processus::execute(
-                                'git --git-dir=' . $repositoryRoot . '/.git ' .
-                                    'log ' .
-                                        '--first-parent ' .
-                                        '--pretty="format:  * %s (%aN, %aI)" ' .
-                                        $fromStep . '...' . $toStep,
-                                false
-                            ) . "\n\n";
+                        $changelog .= '# ' . $title . "\n\n";
+
+                        $commits = explode("\n", Console\Processus::execute(
+                            'git --git-dir=' . $repositoryRoot . '/.git ' .
+                                'log ' .
+                                    '--first-parent ' .
+                                    '--pretty="format:%s (%aN, %aI)" ' .
+                                    $fromStep . '...' . $toStep,
+                            false
+                        ));
+
+                        $typedCommits = [];
+                        $untypedCommits = [];
+                        foreach ($commits as $commit) {
+                            if (preg_match($changelogThemesRegex, trim($commit), $matches)) {
+                                if (!isset($typedCommits[$matches['type']])) {
+                                    $typedCommits[$matches['type']] = [$matches['section'] => []];
+                                } elseif (!isset($typedCommits[$matches['type']][$matches['section']])) {
+                                    $typedCommits[$matches['type']][$matches['section']] = [];
+                                }
+
+                                $typedCommits[$matches['type']][$matches['section']][] = trim($matches['message']);
+                            } elseif (false === $withoutTypedCommits) {
+                                $untypedCommits[] = $commit;
+                            }
+                        }
+
+                        foreach ($typedCommits as $theme => $contexts) {
+                            $userFriendlyTheme = self::CHANGELOG_THEMES[$theme] ?? $theme;
+                            $changelog .= '## ' . $userFriendlyTheme . "\n\n";
+
+                            foreach ($contexts as $name => $context) {
+                                $userFriendlyName = self::CHANGELOG_KEYWORDS[$name] ?? ucfirst($name);
+                                $changelog .=
+                                    '### ' . $userFriendlyName . "\n\n" .
+                                    ' * ' . implode("\n * ", $context) . "\n\n";
+                            }
+                        }
+
+                        if (0 < count($untypedCommits)) {
+                            $changelog .=
+                                '## Commits' . "\n\n" .
+                                ' * ' . implode("\n * ", $untypedCommits) . "\n\n";
+                        }
                     }
                 }
 
@@ -582,6 +649,8 @@ class Snapshot extends Console\Dispatcher\Kit
                 'b'    => 'Whether we have break the backward compatibility ' .
                           'or not.',
                 'c'    => 'Only do steps related to the CHANGELOG.md file.',
+                'w'    => 'Only export typed commits to the CHANGELOG.md ' .
+                          'file and discard others.',
                 't'    => 'Only do steps related to the tag.',
                 'g'    => 'Only do steps related to Github release.',
                 'm'    => 'Set the minimum tag (default: the latest, often ' .
